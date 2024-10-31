@@ -34,24 +34,13 @@ class Network:
 
 class Save_obj:
     # the object to save the responses 
-    def __init__(self, scn, stat, con_netw, ipv4, conbss, freq, chan, sec, rss, avg_rssi, rxmod, rxMCs, txMod, txMC, txbitr, rxbitr):
-        self.scanning = scn
-        self.state = stat
-        self.connected_network = con_netw 
-        self.ipv4_add = ipv4
-        self.connectdBss = conbb
-        self.freqeuncy = freq
-        self.channel = chan
-        self.security = sec
-        self.rssi = rss
-        self.avarage_rssi = avg_rssi 
-        self.rxMode = rxmod
-        self.rxMCS = rxMCs
-        self.txMode = txMod
-        self.txMCS = txMC
-        self.txBitrate = txbitr
-        self.rxBitrate =rxbitr
-
+    def __init__(self, bssid):
+        self.bssid = bssid
+        self.information = {}
+    def add_information(self,key, information):
+        self.information[key] =information
+    def get_information(self,key):
+        return self.information[key]
 ####################################################################
 def scan_for_networks(wlan_interface):
     # scanns for networks
@@ -78,7 +67,7 @@ def scan_for_networks(wlan_interface):
     current_network = ""
     for line in cleared_list:
         # filters the input 
-        filtered_list = [x for x in line.split(" ") if not (x == '' or x.startswith('\x1b[0m')) ]
+        filtered_list = [x for x in line.split(" ") if not (x == '' or x =='\x1b[0m') ]
         if(len(filtered_list) ==1):
             # if we have another 
             current_network = filtered_list[0]
@@ -105,15 +94,24 @@ def scan_basestation(wlan_interface, base_station_id, waittime):
     sleep(waittime)
     
     #getting all of the information we needed  
-    print(subprocess.run(["iwctl", "station", wlan_interface, "show"]))
-
-
-
+    station_scan_result=subprocess.run(["iwctl", "station", wlan_interface, "show"], stdout=subprocess.PIPE, text=True)
+    #deleting the unneded startstuff
+    information_str =station_scan_result.stdout.split("\n")
+    del information_str[0:4]
+    # parsing the output into an object and into a dict
+    for line in information_str:
+        filtered_list = [x for x in line.split(" ") if not (x == '' or x.startswith('\x1b[0m'))]
+        #skips empty lists
+        if(filtered_list == []):
+            continue
+        print(filtered_list)
     #disconnecting from access point
     subprocess.run(["iwctl", "station", wlan_interface, "disconnect"])
     # returning the settings
     subprocess.run(["iwctl", "debug", wlan_interface,"autoconnect", "on"])
 
+
+    
 def main():
     print("Network Scanner")
     interface_name=input("Interface_name:")
