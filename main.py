@@ -2,7 +2,6 @@ import subprocess
 from time import sleep
 
 
-
 # the class Network stores 
 class Network:
     
@@ -41,6 +40,8 @@ class Save_obj:
         self.information[key] =information
     def get_information(self,key):
         return self.information[key]
+    def get_keys(self):
+        return self.information.keys()
 ####################################################################
 def scan_for_networks(wlan_interface):
     # scanns for networks
@@ -84,6 +85,8 @@ def scan_basestation(wlan_interface, base_station_id, waittime):
     # @wlan_interface : string - the wlan interface to use
     # @ base_station_id : string - the base_station to scan
     # @ waittime : int - the time for sleep while waiting betwen connecting
+
+    safe_obj = Save_obj(base_station_id)
     
     # setting all of the options so that it stays connected to the 
     subprocess.run(["iwctl", "debug", wlan_interface,"autoconnect", "off"])
@@ -102,15 +105,35 @@ def scan_basestation(wlan_interface, base_station_id, waittime):
     for line in information_str:
         filtered_list = [x for x in line.split(" ") if not (x == '' or x.startswith('\x1b[0m'))]
         #skips empty lists
+
         if(filtered_list == []):
             continue
-        print(filtered_list)
+        # testing ig a connection even occured of if if the client was disconnected
+        
+        #testing got that one condition where there are two things at the beginning
+        if (filtered_list[0] == 'Connected'):
+            #this could be done a bit better but it works for now
+            safe_obj.add_information((filtered_list[0]+filtered_list[1]), filtered_list[2])
+            continue # da man nicht will das es zweimal hinzugefügt wird
+
+        #das normale hinzufügen von den Objekten
+        # we ignore the least the value
+        safe_obj.add_information(filtered_list[0], filtered_list[1])
+        
     #disconnecting from access point
     subprocess.run(["iwctl", "station", wlan_interface, "disconnect"])
     # returning the settings
     subprocess.run(["iwctl", "debug", wlan_interface,"autoconnect", "on"])
+    return safe_obj
 
-
+def printing_summary(results, network_name):
+    print(f"The Network that was scanned:{network_name}")
+    for result in results:
+        if(results[result] == None):
+            print(f"UwU {results[result]}")
+            continue
+        for base_station_result  in results[result].get:
+            print(base_station_results.keys())
     
 def main():
     print("Network Scanner")
@@ -120,7 +143,13 @@ def main():
         scan_results[key].print()
         
     network_to_scan= input("Name of Network To Scan:")
-    for bss in (scan_results["Gaesteresidenz"].get_base_Station()):
-        print(bss[0])
-        scan_basestation(interface_name, bss[0] ,30)
+    network_results = {}
+    
+    for bss in (scan_results[network_to_scan].get_base_Station()):
+        print(f"scanning the following basestation:{bss[0]} on the Network {network_to_scan}")
+        results = scan_basestation(interface_name, bss[0] ,30)
+        print(results)
+        network_results[bss[0]] = results
+    # priting out the summary
+    printing_summary(network_results, network_to_scan)
 main()
