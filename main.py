@@ -15,9 +15,10 @@ class Network:
     def print(self):
         # prints all the interface information we need
         print(self.Network_name)
-        print("-----------------------")
+        print("-----START-BSS-----")
         for item in self.base_stations:
             print(f"BSS:{item[0]} , RSSI:{item[1]}, Freq:{item[2]}, Rank:{item[3]}")
+        print("-----END-BSS-----")
         
     # adding a Basestation to a Network
     def add_Ap(self,ap_line):
@@ -130,10 +131,9 @@ def printing_summary(results, network_name):
     print(f"The Network that was scanned:{network_name}")
     for result in results:
         if(results[result] == None):
-            print(f"UwU {results[result]}")
             continue
-        for base_station_result  in results[result].get:
-            print(base_station_results.keys())
+        for base_station_key  in results[result].get_keys():
+            print(f"{base_station_key}:{results[result].get_information(base_station_key)}")
     
 def main():
     print("Network Scanner")
@@ -147,7 +147,7 @@ def main():
     
     for bss in (scan_results[network_to_scan].get_base_Station()):
         print(f"scanning the following basestation:{bss[0]} on the Network {network_to_scan}")
-        results = scan_basestation(interface_name, bss[0] ,30)
+        results = scan_basestation(interface_name, bss[0] ,10)
         print(results)
         network_results[bss[0]] = results
     # priting out the summary
